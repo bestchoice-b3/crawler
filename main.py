@@ -29,6 +29,80 @@ def _get_tickers(config: dict, site_cfg: dict) -> list[str]:
     return result
 
 
+def _md_escape(value: object) -> str:
+    s = "" if value is None else str(value)
+    s = s.replace("\r\n", "\n").replace("\r", "\n")
+    s = s.replace("|", "\\|")
+    s = s.replace("\n", "<br>")
+    return s
+
+
+def _md_table(rows: list[dict]) -> str:
+    if not rows:
+        return "(sem dados)\n"
+
+    cols: list[str] = []
+    seen: set[str] = set()
+    for r in rows:
+        if not isinstance(r, dict):
+            continue
+        for k in r.keys():
+            ks = str(k)
+            if ks not in seen:
+                seen.add(ks)
+                cols.append(ks)
+
+    if not cols:
+        return "(sem dados)\n"
+
+    header = "| " + " | ".join(_md_escape(c) for c in cols) + " |\n"
+    sep = "| " + " | ".join(["---"] * len(cols)) + " |\n"
+    body_lines: list[str] = []
+    for r in rows:
+        if not isinstance(r, dict):
+            continue
+        body_lines.append("| " + " | ".join(_md_escape(r.get(c)) for c in cols) + " |\n")
+    return header + sep + "".join(body_lines)
+
+
+def _md_kv_table(item: dict) -> str:
+    rows = [{"campo": k, "valor": item.get(k)} for k in item.keys()]
+    return _md_table(rows)
+
+
+def _to_markdown(payload: dict) -> str:
+    ticker = str(payload.get("ticker") or "").strip()
+    source = str(payload.get("source") or "").strip()
+    generated_at = str(payload.get("generated_at") or "").strip()
+    items = payload.get("items")
+
+    title = "# " + (f"{ticker} ({source})" if ticker else source or "data")
+    md = title + "\n\n"
+    if generated_at:
+        md += f"generated_at: {generated_at}\n\n"
+
+    if isinstance(items, list):
+        dict_rows = [x for x in items if isinstance(x, dict)]
+        md += _md_table(dict_rows)
+        return md
+
+    if isinstance(items, dict):
+        for k in sorted(items.keys(), key=lambda x: str(x)):
+            v = items.get(k)
+            md += f"## {k}\n\n"
+            if isinstance(v, dict):
+                md += _md_kv_table(v) + "\n"
+            elif isinstance(v, list):
+                md += _md_table([x for x in v if isinstance(x, dict)]) + "\n"
+            else:
+                md += _md_escape(v) + "\n\n"
+        return md
+
+    if isinstance(payload, dict):
+        md += _md_kv_table(payload)
+    return md
+
+
 def run(config: dict) -> list[dict]:
     results: list[dict] = []
 
@@ -80,6 +154,10 @@ def main() -> int:
     out_dir = Path(args.out or config.get("output_dir") or "outputs")
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    output_format = str(config.get("output_format") or "json").strip().lower()
+    if output_format not in {"json", "md"}:
+        output_format = "json"
+
     generated_at = datetime.now(timezone.utc).isoformat()
     items = run(config)
 
@@ -112,37 +190,51 @@ def main() -> int:
             "source": source,
             "items": ticker_items,
         }
-        out_path = out_dir / f"{ticker.lower()}.{source}.json"
-        out_path.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
+
+        if output_format == "md":
+            out_path = out_dir / f"{ticker.lower()}.{source}.md"
+            out_path.write_text(_to_markdown(payload), encoding="utf-8")
+        else:
+            out_path = out_dir / f"{ticker.lower()}.{source}.json"
+            out_path.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+
         print(f"Wrote {out_path} ({len(ticker_items)} items)")
 
     if volume_map:
-        out_path = out_dir / "volume.json"
+        out_path = out_dir / ("volume.md" if output_format == "md" else "volume.json")
         payload = {
             "generated_at": generated_at,
             "source": "volume",
             "items": volume_map,
         }
-        out_path.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
+
+        if output_format == "md":
+            out_path.write_text(_to_markdown(payload), encoding="utf-8")
+        else:
+            out_path.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
         print(f"Wrote {out_path} ({len(volume_map)} tickers)")
 
     if magic_formula_map:
-        out_path = out_dir / "magic_formula.json"
+        out_path = out_dir / ("magic_formula.md" if output_format == "md" else "magic_formula.json")
         payload = {
             "generated_at": generated_at,
             "source": "magic_formula",
             "items": magic_formula_map,
         }
-        out_path.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
+
+        if output_format == "md":
+            out_path.write_text(_to_markdown(payload), encoding="utf-8")
+        else:
+            out_path.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
         print(f"Wrote {out_path} ({len(magic_formula_map)} tickers)")
 
     if not items:

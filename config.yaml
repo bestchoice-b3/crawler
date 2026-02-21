@@ -1,4 +1,6 @@
 output_dir: outputs
+#output_format: json
+output_format: md
 tickers:
   - ABEV3
   - ALPA3
