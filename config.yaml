@@ -1,0 +1,27 @@
+output_dir: outputs
+sites:
+  fundamentus_insiders:
+    enabled: true
+    tickers:
+      - ALOS3
+      - B3SA3
+    tipo: 1
+
+  bestchoice_volume:
+    enabled: true
+    tickers:
+      - ALOS3
+      - B3SA3
+    tipo: stock
+
+  bestchoice_magic_formula:
+    enabled: true
+
+  statusinvest_prices:
+    enabled: true
+    cookie:
+    storage_state_path: statusinvest_storage_state.json
+    use_browser_fallback: true
+    tickers:
+      - ALOS3
+      - B3SA3
