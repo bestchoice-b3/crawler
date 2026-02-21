@@ -1,6 +1,7 @@
 output_dir: outputs
 #output_format: json
 output_format: md
+mt5_files_dir: /mnt/c/Users/anael/AppData/Roaming/MetaQuotes/Terminal/38FF261A42172F3478E54D3A1A8FE02B/MQL5/Files
 tickers:
   - ABEV3
   - ALPA3

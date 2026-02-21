@@ -8,6 +8,8 @@ __pycache__/
 venv/
 ENV/
 
+pwd.md
+
 # Packaging
 build/
 dist/
@@ -36,3 +38,7 @@ playwright-report/
 
 # Logs
 *.log
+
+# Env
+.env
+.env.*
