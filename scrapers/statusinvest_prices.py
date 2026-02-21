@@ -276,7 +276,16 @@ class StatusInvestPricesScraper:
             url = self._build_url(t)
 
             session = requests.Session()
-            html = self._fetch(session, url)
+            try:
+                html = self._fetch(session, url)
+            except requests.HTTPError as e:
+                resp = getattr(e, "response", None)
+                if resp is not None and getattr(resp, "status_code", None) == 404:
+                    continue
+                continue
+            except requests.RequestException:
+                continue
+
             item = self._parse(html, t, url)
             if item:
                 try:

@@ -11,6 +11,24 @@ from scrapers.bestchoice_magic_formula import BestChoiceMagicFormulaScraper
 from scrapers.statusinvest_prices import StatusInvestPricesScraper
 
 
+def _get_tickers(config: dict, site_cfg: dict) -> list[str]:
+    tickers = site_cfg.get("tickers")
+    if tickers is None:
+        tickers = config.get("tickers", [])
+    if not isinstance(tickers, list):
+        return []
+
+    result: list[str] = []
+    seen: set[str] = set()
+    for t in tickers:
+        v = str(t or "").strip().upper()
+        if not v or v in seen:
+            continue
+        seen.add(v)
+        result.append(v)
+    return result
+
+
 def run(config: dict) -> list[dict]:
     results: list[dict] = []
 
@@ -19,7 +37,7 @@ def run(config: dict) -> list[dict]:
     site_cfg = sites.get("fundamentus_insiders", {}) or {}
     if site_cfg.get("enabled", True):
         scraper = FundamentusInsidersScraper(
-            tickers=site_cfg.get("tickers", []) or [],
+            tickers=_get_tickers(config, site_cfg),
             tipo=int(site_cfg.get("tipo", 1)),
         )
         results.extend(scraper.scrape())
@@ -27,7 +45,7 @@ def run(config: dict) -> list[dict]:
     site_cfg = sites.get("bestchoice_volume", {}) or {}
     if site_cfg.get("enabled", True):
         scraper = BestChoiceVolumeScraper(
-            tickers=site_cfg.get("tickers", []) or [],
+            tickers=_get_tickers(config, site_cfg),
             tipo=str(site_cfg.get("tipo", "stock")),
         )
         results.extend(scraper.scrape())
@@ -40,7 +58,7 @@ def run(config: dict) -> list[dict]:
     site_cfg = sites.get("statusinvest_prices", {}) or {}
     if site_cfg.get("enabled", True):
         scraper = StatusInvestPricesScraper(
-            tickers=site_cfg.get("tickers", []) or [],
+            tickers=_get_tickers(config, site_cfg),
             cookie=site_cfg.get("cookie"),
             storage_state_path=site_cfg.get("storage_state_path"),
             use_browser_fallback=bool(site_cfg.get("use_browser_fallback", True)),

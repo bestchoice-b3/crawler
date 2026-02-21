@@ -1,27 +1,74 @@
 output_dir: outputs
+tickers:
+  - ABEV3
+  - ALPA3
+  - ASAI3
+  - AZUL4
+  - BBAS3
+  - BBDC3
+  - BBSE3
+  - BEEF3
+  - B3SA3
+  - BRAP3
+  - BRFS3
+  - BRKM3
+  - CASH3
+  - CMIG3
+  - COGN3
+  - CPFE3
+  - CRFB3
+  - CSNA3
+  - CVCB3
+  - CYRE3
+  - ELET3
+  - EMBR3
+  - EQTL3
+  - EZTC3
+  - FLRY3
+  - GGBR3
+  - GOAU3
+  - GOLL4
+  - HAPV3
+  - HYPE3
+  - ITUB3
+  - JBSS3
+  - KLBN3
+  - LREN3
+  - LWSA3
+  - MGLU3
+  - MRVE3
+  - PCAR3
+  - PETR3
+  - PETZ3
+  - POSI3
+  - PRIO3
+  - QUAL3
+  - RADL3
+  - RAIL3
+  - RDOR3
+  - RECV3
+  - RENT3
+  - SANB3
+  - SBSP3
+  - SUZB3
+  - TAEE3
+  - TIMS3
+  - TOTS3
+  - USIM5
+  - VALE3
+  - VIVT3
+  - WEGE3
+  - YDUQ3
 sites:
   fundamentus_insiders:
     enabled: true
-    tickers:
-      - ALOS3
-      - B3SA3
     tipo: 1
-
   bestchoice_volume:
     enabled: true
-    tickers:
-      - ALOS3
-      - B3SA3
-    tipo: stock
-
   bestchoice_magic_formula:
     enabled: true
-
   statusinvest_prices:
     enabled: true
     cookie:
     storage_state_path: statusinvest_storage_state.json
     use_browser_fallback: true
-    tickers:
-      - ALOS3
-      - B3SA3
