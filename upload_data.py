@@ -20,6 +20,7 @@ class UploadConfig:
     supabase_key: str
     outputs_dir: Path
     mt5_files_dir: Path | None
+    common_id: int
     dry_run: bool
     tickers: list[str] | None
 
@@ -166,6 +167,18 @@ def _build_row(outputs_dir: Path, mt5_files_dir: Path | None, ticker: str) -> di
     return row
 
 
+def _build_common_row(outputs_dir: Path, common_id: int) -> dict[str, Any]:
+    magic_formula = _maybe_read_outputs_json(outputs_dir, "magic_formula.json")
+    volume = _maybe_read_outputs_json(outputs_dir, "volume.json")
+
+    row: dict[str, Any] = {
+        "id": int(common_id),
+        "data_magic_formula": magic_formula,
+        "data_volume": volume,
+    }
+    return row
+
+
 def _upsert_rows(cfg: UploadConfig) -> None:
     config_data = _load_config(Path("config.yaml"))
     tickers = cfg.tickers
@@ -181,9 +194,13 @@ def _upsert_rows(cfg: UploadConfig) -> None:
 
     rows = [_build_row(cfg.outputs_dir, cfg.mt5_files_dir, t) for t in tickers]
 
+    common_row = _build_common_row(cfg.outputs_dir, cfg.common_id)
+
     if cfg.dry_run:
         print(f"DRY RUN: would upsert {len(rows)} rows into indicators")
         print(json.dumps(rows[:2], ensure_ascii=False, indent=2))
+        print("DRY RUN: would upsert 1 row into indicators_common")
+        print(json.dumps(common_row, ensure_ascii=False, indent=2))
         return
 
     supabase = create_client(cfg.supabase_url, cfg.supabase_key)
@@ -198,12 +215,21 @@ def _upsert_rows(cfg: UploadConfig) -> None:
     else:
         print("Upsert completed")
 
+    resp2 = (
+        supabase.from_("indicators_common")
+        .upsert([common_row], on_conflict="id")
+        .execute()
+    )
+    if getattr(resp2, "error", None):
+        raise SystemExit(str(resp2.error))
+
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="config.yaml")
     parser.add_argument("--out", default=None)
     parser.add_argument("--mt5-dir", default=None)
+    parser.add_argument("--common-id", type=int, default=None)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--ticker", action="append", default=None)
     args = parser.parse_args()
@@ -218,6 +244,15 @@ def main() -> int:
     mt5_files_dir_value = args.mt5_dir or config.get("mt5_files_dir")
     mt5_files_dir = Path(mt5_files_dir_value) if mt5_files_dir_value else None
 
+    common_id_value = (
+        args.common_id
+        if args.common_id is not None
+        else config.get("indicators_common_id")
+    )
+    if common_id_value is None:
+        common_id_value = os.environ.get("INDICATORS_COMMON_ID")
+    common_id = int(common_id_value) if common_id_value is not None else 1
+
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_KEY")
     if not supabase_url or not supabase_key:
@@ -228,6 +263,7 @@ def main() -> int:
         supabase_key=supabase_key,
         outputs_dir=outputs_dir,
         mt5_files_dir=mt5_files_dir,
+        common_id=common_id,
         dry_run=bool(args.dry_run),
         tickers=_get_tickers(config, args.ticker),
     )
