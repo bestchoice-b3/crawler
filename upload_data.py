@@ -147,6 +147,7 @@ def _build_row(outputs_dir: Path, mt5_files_dir: Path | None, ticker: str) -> di
 
     insiders = _maybe_read_outputs_json(outputs_dir, f"{t.lower()}.insiders.json")
     statusinvest = _maybe_read_outputs_json(outputs_dir, f"{t.lower()}.statusinvest.json")
+    acionistas = _maybe_read_outputs_json(outputs_dir, f"{t.lower()}.acionistas.json")
 
     adx = _maybe_read_json_from_dir(mt5_files_dir, f"{t.lower()}.adx.json")
     obv = _maybe_read_json_from_dir(mt5_files_dir, f"{t.lower()}.obv.json")
@@ -158,6 +159,7 @@ def _build_row(outputs_dir: Path, mt5_files_dir: Path | None, ticker: str) -> di
         "update_at": date.today().isoformat(),
         "data_insiders": insiders,
         "data_indicators": statusinvest,
+        "data_shark": acionistas,
         "data_obv": obv,
         "data_adx": adx,
         "data_peaks_valleys": peaks_valleys,
@@ -170,11 +172,13 @@ def _build_row(outputs_dir: Path, mt5_files_dir: Path | None, ticker: str) -> di
 def _build_common_row(outputs_dir: Path, common_id: int) -> dict[str, Any]:
     magic_formula = _maybe_read_outputs_json(outputs_dir, "magic_formula.json")
     volume = _maybe_read_outputs_json(outputs_dir, "volume.json")
+    sharks = _maybe_read_outputs_json(outputs_dir, "sharks.json")
 
     row: dict[str, Any] = {
         "id": int(common_id),
         "data_magic_formula": magic_formula,
         "data_volume": volume,
+        "data_sharks": sharks,
     }
     return row
 

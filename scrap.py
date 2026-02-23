@@ -6,9 +6,11 @@ from pathlib import Path
 import yaml
 
 from scrapers.fundamentus_insiders import FundamentusInsidersScraper
+from scrapers.fundamentus_acionistas import FundamentusAcionistasScraper
 from scrapers.bestchoice_volume import BestChoiceVolumeScraper
 from scrapers.bestchoice_magic_formula import BestChoiceMagicFormulaScraper
 from scrapers.statusinvest_prices import StatusInvestPricesScraper
+from sharks import build_sharks
 
 
 def _get_tickers(config: dict, site_cfg: dict) -> list[str]:
@@ -111,6 +113,14 @@ def run(config: dict) -> list[dict]:
     site_cfg = sites.get("fundamentus_insiders", {}) or {}
     if site_cfg.get("enabled", True):
         scraper = FundamentusInsidersScraper(
+            tickers=_get_tickers(config, site_cfg),
+            tipo=int(site_cfg.get("tipo", 1)),
+        )
+        results.extend(scraper.scrape())
+
+    site_cfg = sites.get("fundamentus_acionistas", {}) or {}
+    if site_cfg.get("enabled", True):
+        scraper = FundamentusAcionistasScraper(
             tickers=_get_tickers(config, site_cfg),
             tipo=int(site_cfg.get("tipo", 1)),
         )
@@ -236,6 +246,15 @@ def main() -> int:
                 encoding="utf-8",
             )
         print(f"Wrote {out_path} ({len(magic_formula_map)} tickers)")
+
+    sharks = build_sharks(out_dir)
+    if sharks:
+        out_path = out_dir / "sharks.json"
+        out_path.write_text(
+            json.dumps(sharks, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        print(f"Wrote {out_path} ({len(sharks)} sharks)")
 
     if not items:
         print("No items collected")
