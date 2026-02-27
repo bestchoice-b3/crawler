@@ -62,6 +62,7 @@ tickers:
   - VIVT3
   - WEGE3
   - YDUQ3
+  - SOJA3
 sites:
   fundamentus_insiders:
     enabled: true
