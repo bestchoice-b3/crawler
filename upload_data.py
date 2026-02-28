@@ -119,6 +119,7 @@ def _maybe_read_mt5_image(mt5_dir: Path | None, ticker: str) -> str | None:
 
     t = ticker.strip().upper()
     prefix = t.lower()
+    expected = f"{prefix}_d1.png"
 
     candidates: list[Path] = []
     try:
@@ -127,6 +128,9 @@ def _maybe_read_mt5_image(mt5_dir: Path | None, ticker: str) -> str | None:
                 continue
             name = p.name.lower()
             if not name.endswith(".png"):
+                continue
+            if name == expected:
+                candidates.append(p)
                 continue
             if not name.startswith(prefix):
                 continue
