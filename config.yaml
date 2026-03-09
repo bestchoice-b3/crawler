@@ -63,6 +63,7 @@ tickers:
   - WEGE3
   - YDUQ3
   - SOJA3
+  - CMIN3
 sites:
   fundamentus_insiders:
     enabled: true
