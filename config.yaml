@@ -64,6 +64,7 @@ tickers:
   - YDUQ3
   - SOJA3
   - CMIN3
+  - VLID3
 sites:
   fundamentus_insiders:
     enabled: true
