@@ -65,6 +65,7 @@ tickers:
   - SOJA3
   - CMIN3
   - VLID3
+  - POMO4
 sites:
   fundamentus_insiders:
     enabled: true
