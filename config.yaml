@@ -66,6 +66,9 @@ tickers:
   - CMIN3
   - VLID3
   - POMO4
+  - VIVA3
+  - RANI3
+  
 sites:
   fundamentus_insiders:
     enabled: true
