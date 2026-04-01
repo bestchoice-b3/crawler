@@ -70,7 +70,22 @@ tickers:
   - RANI3
   - FIQE3
   - ROMI3
-  
+  - ALOS3
+  - BLAU3
+  - CAMB3
+  - EGIE3
+  - ENMT3
+  - EQPA3
+  - FESA4
+  - INTB3
+  - ITSA4
+  - KLBN4
+  - LEVE3
+  - PETR4
+  - SHUL4
+  - VAMO3
+  - VULC3
+
 sites:
   fundamentus_insiders:
     enabled: true
