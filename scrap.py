@@ -3,6 +3,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+import requests
 import yaml
 
 from scrapers.fundamentus_insiders import FundamentusInsidersScraper
@@ -13,10 +14,7 @@ from scrapers.statusinvest_prices import StatusInvestPricesScraper
 from sharks import build_sharks
 
 
-def _get_tickers(config: dict, site_cfg: dict) -> list[str]:
-    tickers = site_cfg.get("tickers")
-    if tickers is None:
-        tickers = config.get("tickers", [])
+def _normalize_tickers(tickers: object) -> list[str]:
     if not isinstance(tickers, list):
         return []
 
@@ -29,6 +27,34 @@ def _get_tickers(config: dict, site_cfg: dict) -> list[str]:
         seen.add(v)
         result.append(v)
     return result
+
+
+def _fetch_tickers_from_endpoint(url: str) -> list[str]:
+    u = str(url or "").strip()
+    if not u:
+        return []
+
+    resp = requests.get(u, timeout=10)
+    resp.raise_for_status()
+    payload = resp.json()
+    tickers = payload.get("tickers") if isinstance(payload, dict) else None
+    return _normalize_tickers(tickers)
+
+
+def _get_tickers(config: dict, site_cfg: dict) -> list[str]:
+    endpoint = site_cfg.get("tickers_endpoint") or config.get("tickers_endpoint")
+    if endpoint:
+        try:
+            from_endpoint = _fetch_tickers_from_endpoint(str(endpoint))
+            if from_endpoint:
+                return from_endpoint
+        except Exception:
+            pass
+
+    tickers = site_cfg.get("tickers")
+    if tickers is None:
+        tickers = config.get("tickers", [])
+    return _normalize_tickers(tickers)
 
 
 def _md_escape(value: object) -> str:

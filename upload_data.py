@@ -9,6 +9,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+import requests
 import yaml
 from dotenv import load_dotenv
 from supabase import create_client
@@ -40,6 +41,27 @@ def _get_tickers(config: dict[str, Any], only: list[str] | None) -> list[str] | 
             seen.add(v)
             result.append(v)
         return result
+
+    endpoint = config.get("tickers_endpoint")
+    if endpoint:
+        try:
+            resp = requests.get(str(endpoint).strip(), timeout=10)
+            resp.raise_for_status()
+            payload = resp.json()
+            tickers = payload.get("tickers") if isinstance(payload, dict) else None
+            if isinstance(tickers, list):
+                result: list[str] = []
+                seen: set[str] = set()
+                for t in tickers:
+                    v = str(t or "").strip().upper()
+                    if not v or v in seen:
+                        continue
+                    seen.add(v)
+                    result.append(v)
+                if result:
+                    return result
+        except Exception:
+            pass
 
     tickers = config.get("tickers")
     if tickers is None:
