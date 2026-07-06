@@ -29,7 +29,7 @@ def scrape_ticker(ticker: str) -> JSONResponse:
         tickers=[t],
         cookie=None,
         storage_state_path=DEFAULT_STORAGE_STATE,
-        use_browser_fallback=True,
+        use_browser_fallback=False,
     )
 
     items = scraper.scrape()
