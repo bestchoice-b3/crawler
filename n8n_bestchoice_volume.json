@@ -1,0 +1,118 @@
+{
+  "name": "BestChoice Volume Scraper",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Read tickers from upstream node or hardcode for testing\nconst input = $input.first().json;\nconst tickers = input?.tickers || ['PETR4', 'VALE3'];\nreturn tickers.map(t => ({ ticker: String(t).trim().toUpperCase() }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "id": "0e1a2b3c-4d5e-6f7g-8h9i-0j1k2l3m4n5o",
+      "name": "Prepare Tickers"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://bestchoice-serverless.netlify.app/.netlify/functions/post",
+        "sendBody": true,
+        "contentType": "json",
+        "rawParameters": false,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "columns",
+              "value": "name,description,type,exchange,close,change,volume,volume_change,average_volume_30d_calc,average_volume_10d_calc,recommendation_mark,net_margin_fy,dividends_yield_current"
+            },
+            {
+              "name": "filter",
+              "value": "={{ JSON.stringify([{ left: \"type\", operation: \"equal\", right: \"stock\" }, { left: \"name\", operation: \"equal\", right: $json.ticker }]) }}"
+            },
+            {
+              "name": "options",
+              "value": "={{ JSON.stringify({ lang: \"pt\" }) }}"
+            },
+            {
+              "name": "range",
+              "value": "[0,1]"
+            },
+            {
+              "name": "sort",
+              "value": "={{ JSON.stringify({ sortBy: \"name\", sortOrder: \"asc\" }) }}"
+            },
+            {
+              "name": "symbols",
+              "value": "{}"
+            },
+            {
+              "name": "markets",
+              "value": "brazil"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-target-url",
+              "value": "https://scanner.tradingview.com/brazil/scan"
+            },
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [260, 0],
+      "id": "1f2b3c4d-5e6f-7g8h-9i0j-1k2l3m4n5o6p",
+      "name": "Fetch BestChoice Volume"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ticker = $input.first().json.ticker;\nconst response = $input.first().json;\nconst data = response.data || [];\nif (!data.length) return [];\n\nconst d = data[0].d || [];\nif (!d || d.length < 13) return [];\n\nconst toFloat = (v) => (v === null || v === '' ? null : parseFloat(v));\nconst toInt = (v) => {\n  if (v === null || v === '') return null;\n  const n = parseFloat(v);\n  return isNaN(n) ? null : Math.round(n);\n};\n\nconst volume = toInt(d[6]);\nconst avg30 = toInt(d[8]);\nlet volumeChangeRatio = null;\nif (volume && avg30) volumeChangeRatio = volume / avg30;\n\nreturn [{\n  json: {\n    site: \"bestchoice\",\n    source: \"volume\",\n    ticker: String(d[0] || '').trim().toUpperCase(),\n    tipo: 'stock',\n    description: d[1],\n    exchange: d[3],\n    close: toFloat(d[4]),\n    change: toFloat(d[5]),\n    volume,\n    volume_change: toFloat(d[7]),\n    volume_change_ratio: volumeChangeRatio,\n    average_volume_30d: avg30,\n    average_volume_10d: toInt(d[9]),\n    recommendation_mark: toFloat(d[10]),\n    net_margin_fy: toFloat(d[11]),\n    dividends_yield_current: toFloat(d[12])\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [520, 0],
+      "id": "2g3h4i5j-6k7l-8m9n-0o1p-2q3r4s5t6u7v",
+      "name": "Normalize Data"
+    }
+  ],
+  "connections": {
+    "Prepare Tickers": {
+      "main": [
+        [
+          {
+            "node": "Fetch BestChoice Volume",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch BestChoice Volume": {
+      "main": [
+        [
+          {
+            "node": "Normalize Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": []
+}

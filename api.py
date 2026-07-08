@@ -12,11 +12,38 @@ if str(PROJECT_ROOT) not in sys.path:
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 
+from scrapers.fundamentus_acionistas import FundamentusAcionistasScraper
 from scrapers.statusinvest_prices import StatusInvestPricesScraper
 
 app = FastAPI(title="StatusInvest Scraper API", version="1.0.0")
 
 DEFAULT_STORAGE_STATE = str(PROJECT_ROOT / "statusinvest_storage_state.json")
+
+@app.get("/scrape/acionistas/{ticker}")
+def scrape_acionistas(ticker: str, tipo: int = 1) -> JSONResponse:
+    t = ticker.strip().upper()
+    if not t:
+        raise HTTPException(status_code=400, detail="ticker is required")
+
+    if tipo not in {1, 2}:
+        raise HTTPException(status_code=400, detail="tipo must be 1 or 2")
+
+    scraper = FundamentusAcionistasScraper(tickers=[t], tipo=tipo)
+    items = scraper.scrape()
+
+    if not items:
+        raise HTTPException(status_code=404, detail=f"No data found for ticker '{t}'")
+
+    payload = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "source": "fundamentus_acionistas",
+        "ticker": t,
+        "tipo": tipo,
+        "items_count": len(items),
+        "items": items,
+    }
+
+    return JSONResponse(content=payload)
 
 
 @app.get("/scrape/{ticker}")
@@ -29,7 +56,7 @@ def scrape_ticker(ticker: str) -> JSONResponse:
         tickers=[t],
         cookie=None,
         storage_state_path=DEFAULT_STORAGE_STATE,
-        use_browser_fallback=False,
+        use_browser_fallback=True,
     )
 
     items = scraper.scrape()
