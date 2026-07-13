@@ -22,12 +22,12 @@ captured: list[dict] = []
 
 
 def on_response(response) -> None:
-    if API_PREFIX in response.url and not captured:
+    if API_PREFIX in response.url and "&q=" in response.url and not captured:
         try:
             body = response.json()
         except Exception:
             return
-        # only capture the response that has debenture records
+        # only capture the filtered response (contains &q=<ticker>)
         if isinstance(body, dict) and isinstance(body.get("content"), list):
             captured.append(body)
 
