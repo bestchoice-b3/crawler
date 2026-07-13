@@ -14,7 +14,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libatk1.0-0 \
     libatk-bridge2.0-0 \
     libcups2 \
-    libgio-cil \
     libexpat1 \
     libx11-6 \
     libxcomposite1 \
