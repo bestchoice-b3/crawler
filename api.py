@@ -21,12 +21,12 @@ app = FastAPI(title="StatusInvest Scraper API", version="1.0.0")
 DEFAULT_STORAGE_STATE = str(PROJECT_ROOT / "statusinvest_storage_state.json")
 
 @app.get("/scrape/debentures/{ticker}")
-def scrape_debentures(ticker: str, google_authorization: str = "") -> JSONResponse:
+def scrape_debentures(ticker: str) -> JSONResponse:
     t = ticker.strip().upper()
     if not t:
         raise HTTPException(status_code=400, detail="ticker is required")
 
-    scraper = AnbimaDebenturesScraper(tickers=[t], google_authorization=google_authorization)
+    scraper = AnbimaDebenturesScraper(tickers=[t])
     items = scraper.scrape()
 
     if not items:
