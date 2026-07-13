@@ -12,12 +12,36 @@ if str(PROJECT_ROOT) not in sys.path:
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 
+from scrapers.anbima_debentures import AnbimaDebenturesScraper
 from scrapers.fundamentus_acionistas import FundamentusAcionistasScraper
 from scrapers.statusinvest_prices import StatusInvestPricesScraper
 
 app = FastAPI(title="StatusInvest Scraper API", version="1.0.0")
 
 DEFAULT_STORAGE_STATE = str(PROJECT_ROOT / "statusinvest_storage_state.json")
+
+@app.get("/scrape/debentures/{ticker}")
+def scrape_debentures(ticker: str, google_authorization: str = "") -> JSONResponse:
+    t = ticker.strip().upper()
+    if not t:
+        raise HTTPException(status_code=400, detail="ticker is required")
+
+    scraper = AnbimaDebenturesScraper(tickers=[t], google_authorization=google_authorization)
+    items = scraper.scrape()
+
+    if not items:
+        raise HTTPException(status_code=404, detail=f"No data found for ticker '{t}'")
+
+    payload = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "source": "anbima_debentures",
+        "ticker": t,
+        "items_count": len(items),
+        "items": items,
+    }
+
+    return JSONResponse(content=payload)
+
 
 @app.get("/scrape/acionistas/{ticker}")
 def scrape_acionistas(ticker: str, tipo: int = 1) -> JSONResponse:
