@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 
 from scrapers.anbima_debentures import AnbimaDebenturesScraper
 from scrapers.fundamentus_acionistas import FundamentusAcionistasScraper
+from scrapers.fundamentus_insiders import FundamentusInsidersScraper
 from scrapers.statusinvest_prices import StatusInvestPricesScraper
 
 app = FastAPI(title="StatusInvest Scraper API", version="1.0.0")
@@ -61,6 +62,33 @@ def scrape_acionistas(ticker: str, tipo: int = 1) -> JSONResponse:
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "source": "fundamentus_acionistas",
+        "ticker": t,
+        "tipo": tipo,
+        "items_count": len(items),
+        "items": items,
+    }
+
+    return JSONResponse(content=payload)
+
+
+@app.get("/scrape/insiders/{ticker}")
+def scrape_insiders(ticker: str, tipo: int = 1) -> JSONResponse:
+    t = ticker.strip().upper()
+    if not t:
+        raise HTTPException(status_code=400, detail="ticker is required")
+
+    if tipo not in {1, 2}:
+        raise HTTPException(status_code=400, detail="tipo must be 1 or 2")
+
+    scraper = FundamentusInsidersScraper(tickers=[t], tipo=tipo)
+    items = scraper.scrape()
+
+    if not items:
+        raise HTTPException(status_code=404, detail=f"No data found for ticker '{t}'")
+
+    payload = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "source": "fundamentus_insiders",
         "ticker": t,
         "tipo": tipo,
         "items_count": len(items),
