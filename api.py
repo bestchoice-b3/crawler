@@ -9,7 +9,10 @@ PROJECT_ROOT = Path(__file__).parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+import os
+
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from dotenv import load_dotenv
 
@@ -22,6 +25,24 @@ from transactions_importer import import_excel
 load_dotenv()
 
 app = FastAPI(title="StatusInvest Scraper API", version="1.0.0")
+
+_cors_origins_env = os.getenv("CORS_ORIGINS", "")
+CORS_ORIGINS = [
+    origin.strip()
+    for origin in _cors_origins_env.split(",")
+    if origin.strip()
+] or [
+    "https://www.meuradarb3.com.br",
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 DEFAULT_STORAGE_STATE = str(PROJECT_ROOT / "statusinvest_storage_state.json")
 
