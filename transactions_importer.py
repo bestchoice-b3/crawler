@@ -137,12 +137,20 @@ def _parse_row(raw: pd.Series, filename: str) -> dict[str, Any] | None:
     return row
 
 
+def _clean_env(value: str | None) -> str:
+    if not value:
+        return ""
+    return value.strip().strip("'\"\n\r")
+
+
 def import_excel(content: bytes, filename: str) -> dict[str, Any]:
     """Read an Excel file and upsert its rows into the ``transactions`` table."""
-    supabase_url = os.environ.get("SUPABASE_URL")
-    supabase_key = os.environ.get("SUPABASE_KEY")
+    supabase_url = _clean_env(os.environ.get("SUPABASE_URL"))
+    supabase_key = _clean_env(os.environ.get("SUPABASE_KEY"))
     if not supabase_url or not supabase_key:
         raise RuntimeError("Missing SUPABASE_URL and/or SUPABASE_KEY env vars")
+    if not supabase_url.startswith(("http://", "https://")):
+        raise RuntimeError(f"Invalid SUPABASE_URL: {supabase_url!r}")
 
     try:
         df = pd.read_excel(io.BytesIO(content), dtype=str, keep_default_na=True)
