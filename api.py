@@ -26,20 +26,12 @@ load_dotenv()
 
 app = FastAPI(title="StatusInvest Scraper API", version="1.0.0")
 
-_cors_origins_env = os.getenv("CORS_ORIGINS", "")
-CORS_ORIGINS = [
-    origin.strip()
-    for origin in _cors_origins_env.split(",")
-    if origin.strip()
-] or [
-    "https://www.meuradarb3.com.br",
-    "http://localhost:3000",
-]
+CORS_ORIGINS = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "*").split(",") if origin.strip()] or ["*"]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
