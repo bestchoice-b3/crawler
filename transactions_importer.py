@@ -131,6 +131,10 @@ def _parse_row(raw: pd.Series, filename: str) -> dict[str, Any] | None:
         "quantidade": quantidade,
         "preco_unitario": preco_unitario,
         "valor_operacao": valor_operacao,
+        "balance": quantidade,
+        "profit": 0,
+        "total": 0,
+        "merged_children": [],
         "source_file": filename,
     }
     row["row_hash"] = _row_hash(row)
