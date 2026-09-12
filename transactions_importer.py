@@ -39,6 +39,7 @@ _HASH_COLUMNS = [
     "quantidade",
     "preco_unitario",
     "valor_operacao",
+    "user_id",
 ]
 
 
@@ -108,7 +109,7 @@ def _row_hash(row: dict[str, Any]) -> str:
     return hashlib.md5("|".join(parts).encode("utf-8")).hexdigest()
 
 
-def _parse_row(raw: pd.Series, filename: str) -> dict[str, Any] | None:
+def _parse_row(raw: pd.Series, filename: str, user_id: str) -> dict[str, Any] | None:
     entrada_saida = _normalize_text(raw.get("entrada_saida"))
     data = _parse_date(raw.get("data"))
     movimentacao = _normalize_text(raw.get("movimentacao"))
@@ -136,6 +137,7 @@ def _parse_row(raw: pd.Series, filename: str) -> dict[str, Any] | None:
         "total": 0,
         "merged_children": [],
         "source_file": filename,
+        "user_id": user_id,
     }
     row["row_hash"] = _row_hash(row)
     return row
@@ -147,7 +149,7 @@ def _clean_env(value: str | None) -> str:
     return value.strip().strip("'\"\n\r")
 
 
-def import_excel(content: bytes, filename: str) -> dict[str, Any]:
+def import_excel(content: bytes, filename: str, user_id: str) -> dict[str, Any]:
     """Read an Excel file and upsert its rows into the ``transactions`` table."""
     supabase_url = _clean_env(os.environ.get("SUPABASE_URL"))
     supabase_key = _clean_env(os.environ.get("SUPABASE_KEY"))
@@ -155,6 +157,8 @@ def import_excel(content: bytes, filename: str) -> dict[str, Any]:
         raise RuntimeError("Missing SUPABASE_URL and/or SUPABASE_KEY env vars")
     if not supabase_url.startswith(("http://", "https://")):
         raise RuntimeError(f"Invalid SUPABASE_URL: {supabase_url!r}")
+    if not user_id:
+        raise ValueError("user_id is required")
 
     try:
         df = pd.read_excel(io.BytesIO(content), dtype=str, keep_default_na=True)
@@ -175,7 +179,7 @@ def import_excel(content: bytes, filename: str) -> dict[str, Any]:
 
     rows: list[dict[str, Any]] = []
     for _, raw in df.iterrows():
-        parsed = _parse_row(raw, filename)
+        parsed = _parse_row(raw, filename, user_id)
         if parsed:
             rows.append(parsed)
 

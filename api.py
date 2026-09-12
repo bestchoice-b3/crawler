@@ -11,7 +11,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import os
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from dotenv import load_dotenv
@@ -96,12 +96,15 @@ def transactions_page() -> str:
 
 
 @app.post("/transactions/import")
-def transactions_import(file: UploadFile = File(...)) -> JSONResponse:
+def transactions_import(
+    file: UploadFile = File(...),
+    user_id: str = Form(...),
+) -> JSONResponse:
     if not file.filename or not file.filename.lower().endswith((".xlsx", ".xls")):
         raise HTTPException(status_code=400, detail="Only Excel files (.xlsx / .xls) are supported")
     try:
         content = file.file.read()
-        result = import_excel(content, file.filename)
+        result = import_excel(content, file.filename, user_id)
         return JSONResponse(content=result)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
