@@ -178,6 +178,15 @@ def import_excel(content: bytes, filename: str) -> dict[str, Any]:
     if not rows:
         return {"filename": filename, "processed": 0, "imported": 0}
 
+    seen: set[str] = set()
+    unique_rows: list[dict[str, Any]] = []
+    for row in rows:
+        row_hash = row["row_hash"]
+        if row_hash not in seen:
+            seen.add(row_hash)
+            unique_rows.append(row)
+    rows = unique_rows
+
     supabase = create_client(supabase_url, supabase_key)
 
     imported = 0
